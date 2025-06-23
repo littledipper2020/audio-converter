@@ -17,28 +17,43 @@ def index():
 @app.route("/convert", methods=["POST"])
 def convert():
     if 'file' not in request.files:
-        return "No file uploaded", 400
+        return "No files uploaded", 400
 
-    file = request.files['file']
-    input_path = os.path.join(UPLOAD_FOLDER, str(uuid.uuid4()) + "_" + file.filename)
-    file.save(input_path)
+    files = request.files.getlist("file")
+    output_paths = []
 
-    original_name = os.path.splitext(file.filename)[0]
-    output_filename = f"{original_name}.wav"
-    output_path = os.path.join(PROCESSED_FOLDER, output_filename)
+    for file in files:
+        input_path = os.path.join(UPLOAD_FOLDER, str(uuid.uuid4()) + "_" + file.filename)
+        file.save(input_path)
 
-    command = [
-        "ffmpeg",
-        "-i", input_path,
-        "-ar", "8000",
-        "-ac", "1",
-        "-f", "wav",
-        "-c:a", "pcm_alaw",
-        output_path
-    ]
-    subprocess.run(command, check=True)
+        original_name = os.path.splitext(file.filename)[0]
+        output_filename = f"{original_name}.wav"
+        output_path = os.path.join(PROCESSED_FOLDER, output_filename)
 
-    return send_file(output_path, as_attachment=True)
+        command = [
+            "ffmpeg",
+            "-i", input_path,
+            "-filter:a", "loudnorm",
+            "-ar", "8000",
+            "-ac", "1",
+            "-f", "wav",
+            "-c:a", "pcm_alaw",
+            output_path
+        ]
+        subprocess.run(command, check=True)
+        output_paths.append(output_path)
+
+    # If one file: send it directly
+    if len(output_paths) == 1:
+        return send_file(output_paths[0], as_attachment=True)
+
+    # If multiple files: zip them for download
+    zip_filename = os.path.join(PROCESSED_FOLDER, "converted_files.zip")
+    with ZipFile(zip_filename, 'w') as zipf:
+        for path in output_paths:
+            zipf.write(path, os.path.basename(path))
+
+    return send_file(zip_filename, as_attachment=True)
 
 import os
 
