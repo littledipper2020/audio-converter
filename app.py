@@ -40,5 +40,8 @@ def convert():
 
     return send_file(output_path, as_attachment=True)
 
+import os
+
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=10000)
+    port = int(os.environ.get("PORT", 10000))  # Use Render's port or default to 10000
+    app.run(host="0.0.0.0", port=port)
