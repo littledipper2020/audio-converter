@@ -1,11 +1,11 @@
 services:
   - type: web
     name: audio-converter
-    env: python
+    env: python3
     buildCommand: |
-  apt-get update
-  apt-get install -y ffmpeg
-  pip3 install -r requirements.txt
-  pip3 list
+  	apt-get update
+  	apt-get install -y ffmpeg
+  	pip3 install -r requirements.txt
+  	pip3 list
     startCommand: python3 app.py
     plan: free
