@@ -3,8 +3,9 @@ services:
     name: audio-converter
     env: python
     buildCommand: |
-      apt-get update
-      apt-get install -y ffmpeg
-      pip install -r requirements.txt
+  apt-get update
+  apt-get install -y ffmpeg
+  pip3 install -r requirements.txt
+  pip3 list
     startCommand: python3 app.py
     plan: free
