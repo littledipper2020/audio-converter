@@ -111,7 +111,7 @@ button:hover {
 
     <form id="uploadForm" enctype="multipart/form-data">
       <label class="drop-zone" id="dropZone">
-        <span id="dropMessage">Click or drag file to convert</span>
+        <span id="dropMessage">Click or drag files to convert</span>
         <input type="file" name="file" multiple id="fileInput" accept="audio/*" required />
       </label>
 
@@ -136,9 +136,11 @@ button:hover {
       dropZone.classList.remove("dragover");
     });
 
-    dropZone.addEventListener("drop", (e) => {
-      e.preventDefault();
-      dropZone.classList.remove("dragover");
+    dropZone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const files = event.dataTransfer.files;
+      fileInput.files = files;
+    });
 
       const files = e.dataTransfer.files;
       if (files.length > 0) {
