@@ -121,75 +121,74 @@ button:hover {
   </div>
 
   <script>
-    const form = document.getElementById("uploadForm");
-    const fileInput = document.getElementById("fileInput");
-    const status = document.getElementById("status");
-    const dropZone = document.getElementById("dropZone");
+  const form = document.getElementById("uploadForm");
+  const fileInput = document.getElementById("fileInput");
+  const status = document.getElementById("status");
+  const dropZone = document.getElementById("dropZone");
+  const dropMessage = document.getElementById("dropMessage");
 
-    // Drag-and-drop functionality
-    dropZone.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      dropZone.classList.add("dragover");
+  // Drag-and-drop functionality
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("dragover");
+  });
+
+  dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("dragover");
+  });
+
+  dropZone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    dropZone.classList.remove("dragover");
+    const files = event.dataTransfer.files;
+    fileInput.files = files;
+
+    const names = Array.from(files).map(f => f.name).join(", ");
+    dropMessage.innerText = names;
+  });
+
+  fileInput.addEventListener("change", () => {
+    const names = Array.from(fileInput.files).map(f => f.name).join(", ");
+    dropMessage.innerText = names;
+  });
+
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+
+    if (!fileInput.files.length) {
+      status.innerText = "Please select a file.";
+      return;
+    }
+
+    const formData = new FormData(form);
+    status.innerText = "Uploading and converting...";
+
+    const response = await fetch("/convert", {
+      method: "POST",
+      body: formData
     });
 
-    dropZone.addEventListener("dragleave", () => {
-      dropZone.classList.remove("dragover");
-    });
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
 
-    dropZone.addEventListener("drop", (event) => {
-      event.preventDefault();
-      const files = event.dataTransfer.files;
-      fileInput.files = files;
-    });
+      const disposition = response.headers.get("Content-Disposition");
+      const isZip = disposition && disposition.includes(".zip");
 
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        fileInput.files = files;
-        document.getElementById("dropMessage").innerText = files[0].name;
-      }
-    });
+      a.href = url;
+      a.download = isZip ? "converted_files.zip" : "converted.wav";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
 
-    fileInput.addEventListener("change", () => {
-      const file = fileInput.files[0];
-      if (file) {
-        document.getElementById("dropMessage").innerText = file.name;
-      }
-    });
+      status.innerText = "Conversion complete!";
+    } else {
+      status.innerText = "Conversion failed. Please try again.";
+    }
+  };
+</script>
 
-    form.onsubmit = async (e) => {
-      e.preventDefault();
-
-      if (!fileInput.files.length) {
-        status.innerText = "Please select a file.";
-        return;
-      }
-
-      const uploadedFileName = fileInput.files[0].name;
-      const baseName = uploadedFileName.substring(0, uploadedFileName.lastIndexOf(".")) || uploadedFileName;
-
-      const formData = new FormData(form);
-      status.innerText = "Uploading and converting...";
-
-      const response = await fetch("/convert", {
-        method: "POST",
-        body: formData
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = baseName + ".wav";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        status.innerText = "Conversion complete!";
-      } else {
-        status.innerText = "Conversion failed. Please try again.";
-      }
-    };
-  </script>
 </body>
 </html>
 
