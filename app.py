@@ -16,32 +16,40 @@ def index():
 
 @app.route("/convert", methods=["POST"])
 def convert():
-    if 'file' not in request.files:
+    files = request.files.getlist("file")
+    if not files:
         return "No files uploaded", 400
 
-    files = request.files.getlist("file")
-    output_paths = []
+    processed_files = []
 
     for file in files:
-        input_path = os.path.join(UPLOAD_FOLDER, str(uuid.uuid4()) + "_" + file.filename)
+        if file.filename == "":
+            continue
+
+        input_filename = f"{uuid.uuid4()}_{file.filename}"
+        input_path = os.path.join(UPLOAD_FOLDER, input_filename)
         file.save(input_path)
 
-        original_name = os.path.splitext(file.filename)[0]
-        output_filename = f"{original_name}.wav"
+        base_name = os.path.splitext(file.filename)[0]
+        output_filename = f"{base_name}.wav"
         output_path = os.path.join(PROCESSED_FOLDER, output_filename)
 
+        # <--- Replace the command here with the normalization command:
         command = [
             "ffmpeg",
             "-i", input_path,
-            "-filter:a", "loudnorm",
+            "-af", "loudnorm",
             "-ar", "8000",
             "-ac", "1",
             "-f", "wav",
             "-c:a", "pcm_alaw",
             output_path
         ]
+
         subprocess.run(command, check=True)
-        output_paths.append(output_path)
+        processed_files.append((output_filename, output_path))
+
+    # Rest of your code that sends files back (single file or zipped multiple)...
 
     # If one file: send it directly
     if len(output_paths) == 1:
