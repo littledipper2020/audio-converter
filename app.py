@@ -2,6 +2,8 @@ from flask import Flask, request, send_file, render_template
 import subprocess
 import os
 import uuid
+import zipfile
+import io
 
 app = Flask(__name__)
 
@@ -34,7 +36,7 @@ def convert():
         output_filename = f"{base_name}.wav"
         output_path = os.path.join(PROCESSED_FOLDER, output_filename)
 
-        # <--- Replace the command here with the normalization command:
+        # 🔊 Normalize and convert
         command = [
             "ffmpeg",
             "-i", input_path,
@@ -49,22 +51,23 @@ def convert():
         subprocess.run(command, check=True)
         processed_files.append((output_filename, output_path))
 
-    # Rest of your code that sends files back (single file or zipped multiple)...
+    # 🗂 Send single file directly or zip multiple
+    if len(processed_files) == 1:
+        return send_file(processed_files[0][1], as_attachment=True)
 
-    # If one file: send it directly
-    if len(output_paths) == 1:
-        return send_file(output_paths[0], as_attachment=True)
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+        for filename, path in processed_files:
+            zip_file.write(path, arcname=filename)
+    zip_buffer.seek(0)
 
-    # If multiple files: zip them for download
-    zip_filename = os.path.join(PROCESSED_FOLDER, "converted_files.zip")
-    with ZipFile(zip_filename, 'w') as zipf:
-        for path in output_paths:
-            zipf.write(path, os.path.basename(path))
-
-    return send_file(zip_filename, as_attachment=True)
-
-import os
+    return send_file(
+        zip_buffer,
+        as_attachment=True,
+        download_name="converted_files.zip",
+        mimetype="application/zip"
+    )
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
