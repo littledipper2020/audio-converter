@@ -56,7 +56,6 @@ def convert():
         original_name = os.path.splitext(processed_files[0][0])[0]
         converted_name = f"{original_name}.wav"
         return send_file(processed_files[0][1], as_attachment=True, download_name=converted_name)
-        erted_name)
 
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
