@@ -51,24 +51,29 @@ def convert():
         subprocess.run(command, check=True)
         processed_files.append((output_filename, output_path))
 
-    # 🗂 Send single file directly or zip multiple
-    if len(processed_files) == 1:
-        original_name = os.path.splitext(processed_files[0][0])[0]
-        converted_name = f"{original_name}.wav"
-        return send_file(processed_files[0][1], as_attachment=True, download_name=converted_name)
-
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "w") as zip_file:
-        for filename, path in processed_files:
-            zip_file.write(path, arcname=filename)
-    zip_buffer.seek(0)
-
+# 🗂 Send single file directly or zip multiple
+if len(processed_files) == 1:
+    original_name = os.path.splitext(processed_files[0][0])[0]
+    converted_name = f"{original_name}.wav"
     return send_file(
-        zip_buffer,
+        processed_files[0][1],
         as_attachment=True,
-        download_name="converted_files.zip",
-        mimetype="application/zip"
+        download_name=converted_name  # ✅ keeps correct filename
     )
+
+# If multiple, zip them
+zip_buffer = io.BytesIO()
+with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+    for filename, path in processed_files:
+        zip_file.write(path, arcname=filename)
+zip_buffer.seek(0)
+
+return send_file(
+    zip_buffer,
+    as_attachment=True,
+    download_name="converted_files.zip",
+    mimetype="application/zip"
+)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
