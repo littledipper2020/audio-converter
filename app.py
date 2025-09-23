@@ -28,15 +28,17 @@ def convert():
         if file.filename == "":
             continue
 
+        # Save input with UUID to avoid collisions
         input_filename = f"{uuid.uuid4()}_{file.filename}"
         input_path = os.path.join(UPLOAD_FOLDER, input_filename)
         file.save(input_path)
 
+        # Build output filename (always .wav)
         base_name = os.path.splitext(file.filename)[0]
         output_filename = f"{base_name}.wav"
         output_path = os.path.join(PROCESSED_FOLDER, output_filename)
 
-        # 🔊 Normalize and convert
+        # 🔊 Normalize + convert
         command = [
             "ffmpeg",
             "-i", input_path,
@@ -51,16 +53,16 @@ def convert():
         subprocess.run(command, check=True)
         processed_files.append((output_filename, output_path))
 
-    # 🗂 Send single file directly or zip multiple
+    # 🗂 Send single file directly
     if len(processed_files) == 1:
-        filename, path = processed_files[0]   # unpack tuple (name, path)
+        filename, path = processed_files[0]
         return send_file(
             path,
             as_attachment=True,
-            download_name=filename   # ✅ use the actual filename
+            download_name=filename  # ✅ correct original-based filename
         )
 
-    # If multiple files, zip them
+    # 🗂 Or send ZIP of multiple files
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         for filename, path in processed_files:
