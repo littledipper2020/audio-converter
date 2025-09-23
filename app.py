@@ -53,12 +53,11 @@ def convert():
 
     # 🗂 Send single file directly or zip multiple
     if len(processed_files) == 1:
-        original_name = os.path.splitext(processed_files[0][0])[0]
-        converted_name = f"{original_name}.wav"
+        filename, path = processed_files[0]   # unpack tuple (name, path)
         return send_file(
-            processed_files[0][1],
+            path,
             as_attachment=True,
-            download_name=converted_name
+            download_name=filename   # ✅ use the actual filename
         )
 
     # If multiple files, zip them
