@@ -186,11 +186,19 @@
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement("a");
 
-          const disposition = response.headers.get("Content-Disposition");
-          const isZip = disposition && disposition.includes(".zip");
+	  const disposition = response.headers.get("Content-Disposition");
 
-          a.href = url;
-          a.download = isZip ? "converted_files.zip" : "converted.wav";
+	  let filename = "download";
+
+	  if (disposition && disposition.includes("filename=")) {
+  	  filename = disposition
+    	  .split("filename=")[1]
+    	  .replace(/"/g, "");
+	  }
+
+	  a.href = url;
+	  a.download = filename;
+
           document.body.appendChild(a);
           a.click();
           a.remove();
